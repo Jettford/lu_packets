@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../lu_packets/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">/*!
+	Documentation and (de-)serialization support for LU&#39;s network protocol.
+*/</span>
+<span class="attribute">#![<span class="ident">feature</span>(<span class="ident">arbitrary_enum_discriminant</span>)]</span>
+
+<span class="doccomment">/**
+	Creates a [`LuNameValue`] containing the arguments.
+
+	The syntax is `name: value`, where `name` is a string literal that will be converted to a [`LuVarWString&lt;u32&gt;`], and `value` is an expression that will be converted to an [`LnvValue`].
+
+	Example:
+
+	```
+	# #[macro_use] extern crate lu_packets;
+	# use lu_packets::lnv;
+	# fn main() {
+	lnv! {
+		&quot;wstring&quot;: &quot;string expression&quot;,
+		&quot;i32&quot;: 42i32,
+		&quot;f32&quot;: 3.14f32,
+		&quot;f64&quot;: 3.14f64,
+		&quot;u32&quot;: 42u32,
+		&quot;bool&quot;: true,
+		&quot;i64&quot;: i64::MAX,
+		&quot;u64&quot;: u64::MAX,
+		&quot;string&quot;: b&quot;byte slice&quot;[..],
+	};
+	# }
+	```
+
+	Care should be taken with integer and float literals to suffix them with the correct type, as seen above. Rust assumes `i32` for integer and `f64` for float literals by default, which may not be what you want, and can lead to incorrect serialization.
+
+	[`LuNameValue`]: crate::world::lnv::LuNameValue
+	[`LuVarWString&lt;u32&gt;`]: crate::common::str::variable::LuVarWString
+	[`LnvValue`]: crate::world::lnv::LnvValue
+*/</span>
+<span class="attribute">#[<span class="ident">macro_export</span>]</span>
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">lnv</span> {
+	{} <span class="op">=</span><span class="op">&gt;</span> { <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">world</span>::<span class="ident">lnv</span>::<span class="ident">LuNameValue</span>::<span class="ident">new</span>() };
+	{$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">literal</span>:<span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>,)<span class="kw-2">*</span>} <span class="op">=</span><span class="op">&gt;</span> {
+		{
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lnv</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">world</span>::<span class="ident">lnv</span>::<span class="ident">LuNameValue</span>::<span class="ident">new</span>();
+			$(<span class="ident">lnv</span>.<span class="ident">insert</span>(::<span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryInto</span>::<span class="ident">try_into</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>).<span class="ident">unwrap</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());)<span class="op">*</span>
+			<span class="ident">lnv</span>
+		}
+	}
+}
+
+<span class="doccomment">/**
+	Converts the argument to a LU string.
+
+	This forwards to the [`TryInto`] implementation on the argument, which means the macro is flexible and works with both string and wstring types, and both fixed and variable types, depending on context. Generally, to convert to a string type, pass a byte slice, and for a wstring type, pass a `&amp;str` or `String`.
+
+	[`TryInto`]: std::convert::TryInto
+*/</span>
+<span class="attribute">#[<span class="ident">macro_export</span>]</span>
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">lu</span> {
+	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">str_lit</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
+		::<span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryInto</span>::<span class="ident">try_into</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">str_lit</span>).<span class="ident">unwrap</span>()
+	}
+}
+
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">raknet</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">auth</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">chat</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">common</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">general</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">world</span>;
+</pre></div>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "lu_packets";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
