@@ -10,8 +10,10 @@ use super::{ChatChannel, GeneralChatMessage, PrivateChatMessage};
 pub enum ChatMessage {
 	GeneralChatMessage(GeneralChatMessage) = 1,
 	PrivateChatMessage(PrivateChatMessage) = 2,
+	AddFriendRequest(AddFriendRequest) = 7,
 	AddFriendResponse(AddFriendResponse) = 8,
 	GetFriendsList = 10,
+	AddIgnore(AddIgnore) = 11,
 	GetIgnoreList = 13,
 	TeamInviteResponse(TeamInviteResponse) = 16,
 	TeamLeave(TeamLeave) = 18,
@@ -30,9 +32,20 @@ pub enum AddFriendResponseCode {
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
+pub struct AddFriendRequest {
+	pub friend_name: LuWString33,
+	pub is_best_friend: bool,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct AddFriendResponse {
 	pub response_code: AddFriendResponseCode,
 	pub friend_name: LuWString33,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+pub struct AddIgnore {
+	pub char_name: LuWString33,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]

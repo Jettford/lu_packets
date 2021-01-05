@@ -5,9 +5,9 @@ use lu_packets_derive::{GameMessage, GmParam, VariantTests};
 
 use crate::common::{ObjId, OBJID_EMPTY};
 
-use crate::world::{CloneId, CLONE_ID_INVALID, Lot, LOT_NULL, MapId, MAP_ID_INVALID, Quaternion, Vector3, ZoneId};
-use crate::world::lnv::LuNameValue;
-use super::{EquipInventory, GmString, GmWString, InventoryType, KillType, UnEquipInventory, MissionState, PetNotificationType, MoveItemInInventory, MoveInventoryBatch, SetIgnoreProjectileCollision};
+use crate::world::{CloneId, CLONE_ID_INVALID, Lot, LOT_NULL, LuNameValue, MapId, MAP_ID_INVALID, Quaternion, Vector3, ZoneId};
+use crate::world::amf3::Amf3;
+use super::{EquipInventory, GmString, GmWString, InventoryType, KillType, UnEquipInventory, MissionState, PetNotificationType, MoveItemInInventory, MoveInventoryBatch, RemoveSkill, SetIgnoreProjectileCollision};
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct SubjectGameMessage {
@@ -24,6 +24,8 @@ pub enum GameMessage {
 	PreloadAnimation(PreloadAnimation) = 42,
 	PlayAnimation(PlayAnimation) = 43,
 	SetName(SetName) = 72,
+	AddSkill(AddSkill) = 127,
+	RemoveSkill(RemoveSkill) = 128,
 	SetCurrency(SetCurrency) = 133,
 	TeamPickupItem(TeamPickupItem) = 140,
 	PlayFxEffect(PlayFxEffect) = 154,
@@ -126,6 +128,7 @@ pub enum GameMessage {
 	EchoSyncSkill(EchoSyncSkill) = 1144,
 	DoClientProjectileImpact(DoClientProjectileImpact) = 1151,
 	SetPlayerAllowedRespawn(SetPlayerAllowedRespawn) = 1165,
+	UiMessageServerToSingleClient(UiMessageServerToSingleClient) = 1184,
 	UncastSkill(UncastSkill) = 1206,
 	FireEventClientSide(FireEventClientSide) = 1213,
 	ChangeObjectWorldState(ChangeObjectWorldState) = 1223,
@@ -255,6 +258,25 @@ const SECONDARY_PRIORITY: f32 = 0.4;
 #[derive(Debug, GameMessage, PartialEq)]
 pub struct SetName {
 	pub name: GmWString,
+}
+
+#[derive(Debug, GameMessage, PartialEq)]
+pub struct AddSkill {
+	#[default(0)]
+	pub ai_combat_weight: i32,
+	#[default(false)]
+	pub from_skill_set: bool,
+	#[default(0)]
+	pub cast_type: i32, // todo: type
+	#[default(-1.0)]
+	pub time_secs: f32,
+	#[default(-1)]
+	pub times_can_cast: i32,
+	pub skill_id: u32, // todo: type
+	#[default(-1)]
+	pub slot_id: i32, // todo: type
+	#[default(true)]
+	pub temporary: bool,
 }
 
 #[derive(Debug, GameMessage, PartialEq)]
@@ -1224,6 +1246,12 @@ pub struct DoClientProjectileImpact {
 #[derive(Debug, GameMessage, PartialEq)]
 pub struct SetPlayerAllowedRespawn {
 	pub dont_prompt_for_respawn: bool,
+}
+
+#[derive(Debug, GameMessage, PartialEq)]
+pub struct UiMessageServerToSingleClient {
+	pub args: Amf3,
+	pub message_name: GmString,
 }
 
 #[derive(Debug, GameMessage, PartialEq)]

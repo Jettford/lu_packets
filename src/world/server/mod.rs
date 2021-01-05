@@ -1,16 +1,21 @@
 //! Server-received world messages.
+pub mod mail;
+
 use std::io::{Read, Write};
 use std::io::Result as Res;
 
 use endio::{Deserialize, LERead, LEWrite, Serialize};
 use endio::LittleEndian as LE;
+use endio_bit::{BEBitReader, BEBitWriter};
 use lu_packets_derive::VariantTests;
 
 use crate::common::{ObjId, LuVarWString, LuWString33, LuWString42, ServiceId};
 use crate::chat::ChatChannel;
 use crate::chat::server::ChatMessage;
+use crate::raknet::client::replica::controllable_physics::FrameStats;
 use super::ZoneId;
 use super::gm::server::SubjectGameMessage;
+use self::mail::Mail;
 
 pub use crate::general::server::GeneralMessage;
 
@@ -39,8 +44,11 @@ pub enum WorldMessage {
 	GeneralChatMessage(GeneralChatMessage) = 14,
 	LevelLoadComplete(LevelLoadComplete) = 19,
 	RouteMessage(RouteMessage) = 21,
+	PositionUpdate(PositionUpdate) = 22,
+	Mail(Mail) = 23,
 	StringCheck(StringCheck) = 25,
 	RequestFreeTrialRefresh = 32,
+	Top5IssuesRequest(Top5IssuesRequest) = 91,
 	UgcDownloadFailed(UgcDownloadFailed) = 120,
 }
 
@@ -140,9 +148,9 @@ pub struct CharacterCreateRequest {
 	pub hair_color: u32, // todo: enum
 	#[padding=8]
 	/// Chosen eyebrow style.
-	pub eyebrow_style: u32, // todo: enum
+	pub eyebrows_style: u32, // todo: enum
 	/// Chosen eye style.
-	pub eye_style: u32, // todo: enum
+	pub eyes_style: u32, // todo: enum
 	/// Chosen mouth style.
 	pub mouth_style: u32, // todo: enum
 }
@@ -220,7 +228,6 @@ impl<'a, W: Write+LEWrite> Serialize<LE, W> for &'a GeneralChatMessage {
 	}
 }
 
-
 /**
 	Reports to the server that client-side loading has finished.
 
@@ -228,7 +235,7 @@ impl<'a, W: Write+LEWrite> Serialize<LE, W> for &'a GeneralChatMessage {
 	The client finishing a zone load initiated by [`LoadStaticZone`](super::client::LoadStaticZone).
 
 	### Handling / Response
-	Respond with [`CreateCharacter`](super::client::CreateCharacter) containing details about the player's character. Add the client to your server's replica manager, so that existing objects in range are replicated using `ReplicaManagerCreation` (todo). Create the character's replica object and and let the replica manager broadcast its creation to all clients in range. Finally, send [`ServerDoneLoadingAllObjects`](crate::world::gm::client::GameMessage::ServerDoneLoadingAllObjects) from the character object to the client.
+	Respond with [`CreateCharacter`](super::client::CreateCharacter) containing details about the player's character. Add the client to your server's replica manager, so that existing objects in range are replicated using [`ReplicaConstruction`](crate::raknet::client::replica::ReplicaConstruction). Create the character's replica object and and let the replica manager broadcast its construction to all clients in range. Finally, send [`ServerDoneLoadingAllObjects`](crate::world::gm::client::GameMessage::ServerDoneLoadingAllObjects) from the character object to the client.
 */
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct LevelLoadComplete {
@@ -241,6 +248,26 @@ pub struct LevelLoadComplete {
 #[repr(u16)]
 pub enum RouteMessage {
 	Chat(ChatMessage) = ServiceId::Chat as u16,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PositionUpdate {
+	frame_stats: FrameStats,
+}
+
+impl<R: Read> Deserialize<LE, R> for PositionUpdate {
+	fn deserialize(reader: &mut R) -> Res<Self> {
+		let mut reader = BEBitReader::new(reader);
+		let frame_stats = LERead::read(&mut reader)?;
+		Ok(Self { frame_stats })
+	}
+}
+
+impl<'a, W: Write> Serialize<LE, W> for &'a PositionUpdate {
+	fn serialize(self, writer: &mut W) -> Res<()> {
+		let mut writer = BEBitWriter::new(writer);
+		LEWrite::write(&mut writer, &self.frame_stats)
+	}
 }
 
 /**
@@ -265,6 +292,21 @@ pub struct StringCheck {
 	pub recipient_name: LuWString42,
 	/// The string to be checked.
 	pub string: LuVarWString<u16>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[repr(u32)]
+#[allow(non_camel_case_types)]
+pub enum Language {
+	en_US,
+	pl_US,
+	de_DE,
+	en_GB,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+pub struct Top5IssuesRequest {
+	language: Language,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]

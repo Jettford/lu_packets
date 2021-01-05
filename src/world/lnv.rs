@@ -11,7 +11,7 @@ use super::gm::GmParam;
 
 use crate::common::{LuStrExt, LuVarString, LuVarWString, LuWStr};
 
-/// A value contained in a [`LuNameValue`]
+/// A value contained in a [`LuNameValue`].
 #[derive(Deserialize, PartialEq, Serialize)]
 #[repr(u8)]
 pub enum LnvValue {
@@ -102,6 +102,10 @@ impl From<&[u8]> for LnvValue {
 	fn from(val: &[u8]) -> Self { LnvValue::String(val.try_into().unwrap()) }
 }
 
+impl<const N: usize> From<&[u8; N]> for LnvValue {
+	fn from(val: &[u8; N]) -> Self { LnvValue::String(val.try_into().unwrap()) }
+}
+
 /// A hash map with values being one of multiple possible types.
 #[derive(PartialEq)]
 pub struct LuNameValue(HashMap<LuVarWString<u32>, LnvValue>);
@@ -171,9 +175,14 @@ impl<'a, W: Write> Serialize<LE, W> for &'a LuNameValue {
 	fn serialize(self, writer: &mut W) -> Res<()> {
 		let mut uncompressed: Vec<u8> = vec![];
 		LEWrite::write(&mut uncompressed, self.len() as u32)?;
-
-		let mut key_value: Vec<_> = self.0.iter().collect();
-		key_value.sort_unstable_by(|(k1, _), (k2, _)| k1.cmp(k2));
+		#[cfg(test)]
+		let key_value = {
+			let mut key_value: Vec<_> = self.0.iter().collect();
+			key_value.sort_unstable_by(|(k1, _), (k2, _)| k1.cmp(k2));
+			key_value
+		};
+		#[cfg(not(test))]
+		let key_value = self.0.iter();
 		for (key, value) in key_value {
 			LEWrite::write(&mut uncompressed, key.len() as u8 * 2)?;
 			key.ser_content(&mut uncompressed)?;

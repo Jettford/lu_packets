@@ -1,10 +1,13 @@
 //! Client-received raknet messages.
+pub mod replica;
+
 use endio::{Deserialize, Serialize};
-use lu_packets_derive::VariantTests;
+use lu_packets_derive::ReplicaVariantTests;
 
 use super::SystemAddress;
+use replica::ReplicaConstruction;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, VariantTests)]
+#[derive(Debug, Deserialize, PartialEq, Serialize, ReplicaVariantTests)]
 #[test_params(crate::world::client::LuMessage)]
 #[non_exhaustive]
 #[repr(u8)]
@@ -12,6 +15,7 @@ pub enum Message<U> {
 	ConnectedPong(ConnectedPong) = 3,
 	ConnectionRequestAccepted(ConnectionRequestAccepted) = 14,
 	DisconnectionNotification = 19,
+	ReplicaConstruction(ReplicaConstruction) = 36,
 	UserMessage(U) = 83,
 }
 
@@ -24,6 +28,11 @@ impl<U> From<ConnectedPong> for Message<U> {
 impl<U> From<ConnectionRequestAccepted> for Message<U> {
 	fn from(msg: ConnectionRequestAccepted) -> Self {
 		Message::ConnectionRequestAccepted(msg)
+	}
+}
+impl<U> From<ReplicaConstruction> for Message<U> {
+	fn from(msg: ReplicaConstruction) -> Self {
+		Message::ReplicaConstruction(msg)
 	}
 }
 

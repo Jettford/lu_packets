@@ -1,15 +1,17 @@
 //! World messages.
 pub mod client;
 pub mod gm;
-pub mod lnv;
+pub mod amf3;
+mod lnv;
 pub mod server;
 
 use std::cmp::PartialEq;
 
 use endio::{Deserialize, Serialize};
 use lu_packets_derive::GmParam;
+pub use lnv::*;
 
-type Lot = u32;
+pub type Lot = u32;
 const LOT_NULL: Lot = -1i32 as Lot;
 
 // todo: better modeling with NonNull and Option
